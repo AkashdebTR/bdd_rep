@@ -2,47 +2,70 @@ using Microsoft.Extensions.Configuration;
 
 namespace PlaywrightBdd.Config;
 
+/// <summary>
+/// Loads and caches validated framework settings from JSON, optional local credentials, and environment variables.
+/// </summary>
 public static class ConfigReader
 {
-    private static readonly IConfigurationRoot Configuration = new ConfigurationBuilder()
-        .SetBasePath(AppContext.BaseDirectory)
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
-        .Build();
+    private static readonly Lazy<FrameworkSettings> _settings = new(LoadSettings);
 
-    private static readonly IConfigurationRoot CredentialsConfiguration = new ConfigurationBuilder()
-        .SetBasePath(AppContext.BaseDirectory)
-        .AddJsonFile("logincredentials.json", optional: false, reloadOnChange: false)
-        .Build();
+    /// <summary>
+    /// Returns the immutable settings snapshot used for the current test process.
+    /// </summary>
+    /// <returns>The validated framework settings.</returns>
+    /// <exception cref="InvalidOperationException">Required settings are missing or invalid.</exception>
+    public static FrameworkSettings Load() => _settings.Value;
 
-    private static readonly BrowserSettings Browser = Configuration.GetSection("Browser").Get<BrowserSettings>()
-        ?? throw new InvalidOperationException("Browser settings are missing from appsettings.json.");
-
-    private static readonly LoginCredentials Credentials = CredentialsConfiguration.Get<LoginCredentials>()
-        ?? throw new InvalidOperationException("Login credentials are missing from logincredentials.json.");
-
-    public static string BaseUrl { get; } = Configuration["BaseUrl"]
-        ?? throw new InvalidOperationException("BaseUrl is missing from appsettings.json.");
-
-    public static string Channel { get; } = Browser.Channel
-        ?? throw new InvalidOperationException("Browser:Channel is missing from appsettings.json.");
-
-    public static bool Headless { get; } = Browser.Headless;
-
-    public static string Username { get; } = Credentials.Username
-        ?? throw new InvalidOperationException("Username is missing from logincredentials.json.");
-
-    public static string Password { get; } = Credentials.Password
-        ?? throw new InvalidOperationException("Password is missing from logincredentials.json.");
-
-    private sealed class BrowserSettings
+    /// <summary>Builds the settings snapshot using JSON defaults, optional local credentials, and environment overrides.</summary>
+    /// <returns>The validated settings snapshot.</returns>
+    private static FrameworkSettings LoadSettings()
     {
-        public string? Channel { get; init; }
-        public bool Headless { get; init; }
+        var credentialsPath = FindLocalCredentialsPath();
+        var localCredentials = new ConfigurationBuilder()
+            .SetBasePath(credentialsPath is null
+                ? Directory.GetCurrentDirectory()
+                : Path.GetDirectoryName(credentialsPath)!)
+            .AddJsonFile("logincredentials.json", optional: true, reloadOnChange: false)
+            .Build();
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
+        var settingsConfiguration = configuration
+            .AddEnvironmentVariables()
+            .Build();
+
+        var settings = settingsConfiguration.Get<FrameworkSettings>()
+            ?? throw new InvalidOperationException("Application settings could not be loaded from appsettings.json.");
+
+        var credentials = settings.TestCredentials with
+        {
+            Username = settings.TestCredentials.Username
+                ?? localCredentials["TestCredentials:Username"]
+                ?? localCredentials["Username"],
+            Password = settings.TestCredentials.Password
+                ?? localCredentials["TestCredentials:Password"]
+                ?? localCredentials["Password"]
+        };
+
+        return (settings with { TestCredentials = credentials }).Validate();
     }
 
-    private sealed class LoginCredentials
+    private static string? FindLocalCredentialsPath()
     {
-        public string? Username { get; init; }
-        public string? Password { get; init; }
+        var directories = new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory };
+        foreach (var directory in directories)
+        {
+            for (var current = new DirectoryInfo(directory); current is not null; current = current.Parent)
+            {
+                var candidate = Path.Combine(current.FullName, "logincredentials.json");
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
     }
 }

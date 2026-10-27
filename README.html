@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Playwright BDD Framework Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b28;
+      --muted: #4a625d;
+      --paper: #f5f7f4;
+      --surface: #ffffff;
+      --line: #c8d4cd;
+      --forest: #173d36;
+      --green: #2a715f;
+      --mint: #d9eee3;
+      --gold: #f3cb73;
+      --code: #172d29;
+      --code-ink: #edf5ef;
+      font-family: "Segoe UI", "Noto Sans", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.62;
+    }
+    a { color: #155e50; text-underline-offset: 0.18em; }
+    a:hover { color: #0c4036; }
+    a:focus-visible, button:focus-visible { outline: 3px solid #bd7a00; outline-offset: 3px; }
+    .masthead {
+      color: #f4f7f3;
+      background: var(--forest);
+      border-bottom: 5px solid var(--gold);
+    }
+    .masthead-inner, .layout {
+      width: min(1200px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+    .masthead-inner { padding: 48px 0 42px; }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: #c8e3d4;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { max-width: 760px; margin: 0; font-size: clamp(2.2rem, 5vw, 4rem); }
+    .masthead p:last-child { max-width: 760px; margin: 18px 0 0; color: #e0eee6; font-size: 1.08rem; }
+    .layout {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      gap: 48px;
+      align-items: start;
+      padding-block: 36px 64px;
+    }
+    nav {
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 18px 16px;
+      background: #e8eee8;
+      border-left: 4px solid var(--green);
+    }
+    nav h2 { margin: 0 0 10px; font-size: 1rem; }
+    nav ol { margin: 0; padding-left: 1.25rem; }
+    nav li { margin: 5px 0; font-size: 0.9rem; }
+    nav a { color: #21463d; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    main { min-width: 0; }
+    section {
+      padding: 0 0 34px;
+      margin: 0 0 34px;
+      border-bottom: 1px solid var(--line);
+      scroll-margin-top: 20px;
+    }
+    section:last-child { border-bottom: 0; }
+    h2 { margin: 0 0 16px; color: var(--forest); font-size: 1.7rem; }
+    h3 { margin: 24px 0 8px; color: #24574b; font-size: 1.17rem; }
+    p { margin: 10px 0; }
+    ul, ol { padding-left: 1.35rem; }
+    li { margin-block: 5px; }
+    code, pre { font-family: Consolas, "Cascadia Mono", "Courier New", monospace; }
+    :not(pre) > code {
+      padding: 0.08em 0.32em;
+      color: #254c42;
+      background: #e2ece5;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      max-width: 100%;
+      overflow-x: auto;
+      padding: 16px 18px;
+      color: var(--code-ink);
+      background: var(--code);
+      border-left: 4px solid var(--gold);
+      line-height: 1.5;
+      tab-size: 2;
+    }
+    table {
+      width: 100%;
+      margin: 16px 0;
+      border-collapse: collapse;
+      background: var(--surface);
+    }
+    caption { padding: 8px; color: var(--muted); text-align: left; font-weight: 600; }
+    th, td { padding: 10px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #173d36; background: #e3ece5; }
+    .note {
+      padding: 14px 16px;
+      margin: 16px 0;
+      background: #fff4d9;
+      border-left: 4px solid #a56800;
+    }
+    .good {
+      padding: 14px 16px;
+      margin: 16px 0;
+      background: var(--mint);
+      border-left: 4px solid var(--green);
+    }
+    .diagram {
+      padding: 16px;
+      color: var(--ink);
+      background: #e8eee8;
+      border: 1px solid var(--line);
+      overflow-x: auto;
+    }
+    footer {
+      padding: 22px max(20px, calc((100% - 1200px) / 2));
+      color: #e0eee6;
+      background: var(--forest);
+    }
+    footer p { margin: 0; }
+    @media (max-width: 850px) {
+      .layout { grid-template-columns: 1fr; gap: 24px; }
+      nav { position: static; max-height: none; }
+      nav ol { columns: 2; column-gap: 24px; }
+    }
+    @media (max-width: 520px) {
+      .masthead-inner, .layout { width: min(100% - 28px, 1200px); }
+      .masthead-inner { padding-block: 34px; }
+      .layout { padding-top: 22px; }
+      nav ol { columns: 1; }
+      th, td { padding: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <p class="eyebrow">Engineering guide · .NET 10</p>
+      <h1>Playwright BDD Framework</h1>
+      <p>A practical guide to the C# UI automation framework: scenario flow, configuration, page objects, utilities, diagnostics, reports, and verified commands.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Table of contents">
+      <h2>On this page</h2>
+      <ol>
+        <li><a href="#overview">Framework overview</a></li>
+        <li><a href="#stack">Technology stack</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#bdd">BDD and scenario IDs</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#utilities">Utility classes</a></li>
+        <li><a href="#lifecycle">Execution lifecycle</a></li>
+        <li><a href="#artifacts">Reports and artifacts</a></li>
+        <li><a href="#setup">Prerequisites and setup</a></li>
+        <li><a href="#running">Running tests</a></li>
+        <li><a href="#standards">Coding standards</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+        <li><a href="#limitations">Limitations</a></li>
+        <li><a href="#policy">License or internal use</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <section id="overview">
+        <h2>1. Framework Overview</h2>
+        <p>This framework automates browser-based authentication flows against SauceDemo or a configured web application. Scenarios are written in Gherkin, executed by Reqnroll, and backed by Microsoft Playwright page objects and NUnit assertions.</p>
+        <p>Reqnroll keeps test intent readable to product and engineering teams. Playwright provides browser control, locator auto-waiting, URL/navigation waits, screenshots, and traces. NUnit provides test discovery, result status, category filtering, and TRX output. Page objects keep application selectors and operations out of step definitions.</p>
+        <p>Each scenario receives its own Playwright process, isolated browser context, and page. The current suite does not enable scenario parallelism.</p>
+      </section>
+
+      <section id="stack">
+        <h2>2. Technology Stack</h2>
+        <p>Versions below are read from <code>PlaywrightBdd.csproj</code>; no unrelated package upgrades are implied.</p>
+        <table>
+          <caption>Direct package references</caption>
+          <thead><tr><th scope="col">Package</th><th scope="col">Version</th><th scope="col">Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>.NET target</td><td>net10.0</td><td>Runtime and compiler target.</td></tr>
+            <tr><td>Microsoft.Playwright</td><td>1.64.1</td><td>Browser automation, locators, assertions, screenshots, and tracing.</td></tr>
+            <tr><td>Reqnroll.NUnit</td><td>3.3.4</td><td>Gherkin execution and NUnit integration.</td></tr>
+            <tr><td>NUnit</td><td>4.3.2</td><td>Assertions, test lifecycle, and test results.</td></tr>
+            <tr><td>NUnit3TestAdapter</td><td>5.0.0</td><td>NUnit discovery and execution through <code>dotnet test</code>.</td></tr>
+            <tr><td>Microsoft.NET.Test.Sdk</td><td>17.14.0</td><td>.NET test host.</td></tr>
+            <tr><td>ExtentReports</td><td>5.0.4</td><td>Shared HTML reporting through <code>ExtentSparkReporter</code>.</td></tr>
+            <tr><td>Microsoft.Extensions.Configuration*</td><td>10.0.0</td><td>JSON, binding, and environment-variable configuration providers.</td></tr>
+            <tr><td>System.Drawing.Common</td><td>10.0.14</td><td>Direct override for the vulnerable 5.0.0 transitive dependency in ExtentReports' dependency graph.</td></tr>
+            <tr><td>NUnit.Analyzers</td><td>4.7.0</td><td>NUnit analyzer diagnostics.</td></tr>
+            <tr><td>coverlet.collector</td><td>6.0.4</td><td>Optional test coverage collection.</td></tr>
+          </tbody>
+        </table>
+        <p>NuGet vulnerability audit was run after the dependency override and reported no vulnerable packages for the configured sources at that time.</p>
+      </section>
+
+      <section id="architecture">
+        <h2>3. Architecture and Project Structure</h2>
+        <pre aria-label="Repository structure"><code>PlaywrightBdd/
+├── Config/
+│   ├── ConfigReader.cs
+│   ├── Constant.cs
+│   └── FrameworkSettings.cs
+├── Features/
+│   ├── Launch.feature
+│   └── Launch.feature.cs       generated by Reqnroll
+├── Hooks/
+│   └── Hooks.cs
+├── Pages/
+│   ├── BasePage.cs
+│   ├── LoginPage.cs
+│   └── InventoryPage.cs
+├── Reporting/
+│   ├── ExtentReportManager.cs
+│   └── ScenarioReportContext.cs
+├── StepDefinitions/
+│   └── LaunchStepDefinitions.cs
+├── Tests/
+│   ├── CommonUtilsTests.cs
+│   ├── CustomWaitTests.cs
+│   └── HelperUtilsTests.cs
+├── Utilities/
+│   ├── CommonUtils.cs
+│   ├── CustomWait.cs
+│   └── HelperUtils.cs
+├── TestResults/                generated; git-ignored
+├── README.html                 self-contained framework guide
+├── README.md                   brief entry point
+├── appsettings.json
+├── .editorconfig
+└── PlaywrightBdd.csproj</code></pre>
+        <table>
+          <caption>Ownership boundaries</caption>
+          <thead><tr><th scope="col">Area</th><th scope="col">Responsibility</th></tr></thead>
+          <tbody>
+            <tr><td>Config</td><td>Typed, validated runtime settings and non-secret constants.</td></tr>
+            <tr><td>Features</td><td>Readable business scenarios and generated NUnit bindings. Edit the <code>.feature</code> source, never the generated C# file.</td></tr>
+            <tr><td>Hooks</td><td>Scenario ID validation, browser/context/page ownership, failure evidence, and lifecycle cleanup.</td></tr>
+            <tr><td>Pages</td><td>Application-specific selectors, navigation, login, inventory readiness, and logout operations.</td></tr>
+            <tr><td>StepDefinitions</td><td>Thin mapping from Gherkin steps to page-object actions and assertions.</td></tr>
+            <tr><td>Utilities</td><td>Generic path helpers, explicit Playwright waits, and shared run metadata; no page-specific selectors.</td></tr>
+            <tr><td>Reporting</td><td>One shared Extent report with per-scenario entries, attempt nodes, attachment links, and one run-end flush.</td></tr>
+            <tr><td>Tests</td><td>Pure helper checks and isolated browser-backed CustomWait checks.</td></tr>
+          </tbody>
+        </table>
+        <pre class="diagram"><code>Gherkin scenario → Reqnroll step definition → Page object → IPage / ILocator
+                           Hooks own browser lifecycle ─────┘
+                           Hooks → screenshot + trace → Extent scenario entry
+                           AfterTestRun → flush shared ExtentSpark report</code></pre>
+      </section>
+
+      <section id="bdd">
+        <h2>4. BDD and Scenario Numbering</h2>
+        <p>Every executable scenario has exactly one stable scenario-ID tag matching <code>TC</code> followed by at least three digits. IDs are authoritative in tags; the title repeats the ID so NUnit output is also traceable. IDs are permanent identifiers, not list positions, NUnit runtime IDs, or retry counters.</p>
+        <pre><code>Feature: User authentication
+
+  @smoke @TC001
+  Scenario: TC001 - Valid user can log in
+    Given I am on the login page
+    When I log in with valid credentials
+    Then I should see the inventory page</code></pre>
+        <p><code>CommonUtils.GetScenarioId</code> requires exactly one matching tag. Extent entry names, scenario logs, screenshot names, and trace names carry the ID. The current feature has no Scenario Outlines. If an outline is added, each generated example must have a distinct stable ID; do not reuse one outline tag for all example executions without extending the ID model.</p>
+        <p>Before adding a scenario, search existing feature files for <code>@TC</code> tags, reserve the next unused ID, and keep it when scenarios are reordered or renamed.</p>
+        <pre><code>Get-ChildItem Features -Filter '*.feature' -Recurse | Select-String -Pattern '@TC[0-9]+'</code></pre>
+      </section>
+
+      <section id="configuration">
+        <h2>5. Configuration Management</h2>
+        <p><code>appsettings.json</code> contains non-secret defaults. Environment variables override ordinary settings using double underscores. Credentials use <code>TestCredentials__Username</code> and <code>TestCredentials__Password</code>; an optional, ignored <code>logincredentials.json</code> is supported for local work and is not copied into build output.</p>
+        <pre><code>{
+  "BaseUrl": "https://www.saucedemo.com/",
+  "Browser": { "Engine": "chromium", "Channel": "chrome", "Headless": false },
+  "Timeouts": { "ActionMs": 10000, "AssertionMs": 5000, "NavigationMs": 30000 },
+  "Diagnostics": {
+    "CaptureScreenshotOnFailure": true,
+    "TraceMode": "retain-on-failure",
+    "ScreenshotDirectory": "TestResults/artifacts/screenshots",
+    "TraceDirectory": "TestResults/artifacts/traces"
+  },
+  "Reporting": { "OutputDirectory": "TestResults/Reports" },
+  "Retry": {
+    "Enabled": false,
+    "MaxRetries": 1,
+    "CaptureScreenshotOnEveryFailedAttempt": true,
+    "TraceOnRetry": true
+  }
+}</code></pre>
+        <p>The real file also retains <code>ArtifactDirectory</code> as a fallback for screenshot/trace directories. <code>ConfigReader.Load()</code> returns one cached validated settings snapshot. The base URL must be absolute HTTP or HTTPS; only Chromium accepts a channel.</p>
+        <h3>Credentials</h3>
+        <p>Set credentials in a developer shell or CI secret store; never commit them:</p>
+        <pre><code>$env:TestCredentials__Username = "your-test-user"
+$env:TestCredentials__Password = "your-test-password"</code></pre>
+        <p>Optional local JSON shape:</p>
+        <pre><code>{ "Username": "your-test-user", "Password": "your-test-password" }</code></pre>
+        <p>Both credentials must be present together. Missing credentials do not prevent non-login scenarios from starting; a login step reports an actionable error. The values are not written to reports.</p>
+        <h3>Retry settings</h3>
+        <div class="note"><strong>Important:</strong> runtime-configurable retries are not supported for these generated Reqnroll NUnit methods. NUnit 4.3.2's retry attribute is method-level and static. When <code>Retry.Enabled</code> is true and <code>MaxRetries &gt; 0</code>, scenario setup fails explicitly. Do not enable this combination expecting retries. <code>MaxRetries</code> is validated from 0 through 5; enabled with zero retries executes once. Screenshot-per-retry and trace-on-retry settings are reserved and currently have no retry attempts to control.</div>
+      </section>
+
+      <section id="utilities">
+        <h2>6. Utility Classes</h2>
+        <table>
+          <caption>Actual public utility APIs</caption>
+          <thead><tr><th scope="col">Class</th><th scope="col">Method</th><th scope="col">Use</th></tr></thead>
+          <tbody>
+            <tr><td rowspan="4"><code>HelperUtils</code></td><td><code>SanitizeFileName(string?)</code></td><td>Replace unsafe filename characters and provide a stable fallback for empty names.</td></tr>
+            <tr><td><code>CreateUniqueArtifactPath(directory, scenarioId, scenarioName, fileName, runId?)</code></td><td>Build a unique path containing run ID, scenario ID, sanitized title, and a GUID; creates the output directory.</td></tr>
+            <tr><td><code>EnsureDirectoryExists(directory)</code></td><td>Create the absolute or project-root-relative directory.</td></tr>
+            <tr><td><code>GetAbsolutePath(path)</code></td><td>Resolve absolute paths or relative paths from the discovered project root.</td></tr>
+            <tr><td rowspan="5"><code>CustomWait</code></td><td><code>WaitForVisibleAsync(locator)</code></td><td>Use Playwright locator state waiting with the configured assertion timeout.</td></tr>
+            <tr><td><code>WaitForHiddenAsync(locator)</code></td><td>Wait until the locator is hidden or absent.</td></tr>
+            <tr><td><code>WaitForEnabledAsync(locator)</code></td><td>Use Playwright's enabled assertion with the configured timeout.</td></tr>
+            <tr><td><code>WaitForUrlAsync(url)</code></td><td>Use Playwright's URL wait with the configured navigation timeout.</td></tr>
+            <tr><td><code>WaitForPageReadyAsync(readinessLocator)</code></td><td>Wait for DOMContentLoaded and then a page-object-provided visible readiness locator.</td></tr>
+            <tr><td rowspan="3"><code>CommonUtils</code></td><td><code>GetRunId()</code></td><td>Resolve the CI run ID from supported CI variables, falling back to <code>local</code>.</td></tr>
+            <tr><td><code>GetEnvironmentName()</code></td><td>Resolve <code>DOTNET_ENVIRONMENT</code> or <code>ASPNETCORE_ENVIRONMENT</code>.</td></tr>
+            <tr><td><code>GetScenarioId(tags)</code></td><td>Require exactly one stable <code>TC###</code> tag and return its uppercase value.</td></tr>
+          </tbody>
+        </table>
+        <p><code>CustomWait</code> is an instance bound to one page and immutable timeout settings. Prefer normal locator actions and assertions first; use these waits for explicit page readiness or URL/state conditions. No arbitrary sleeps or global page state are used.</p>
+      </section>
+
+      <section id="lifecycle">
+        <h2>7. Execution Lifecycle</h2>
+        <ol>
+          <li>Reqnroll starts a scenario and the hook validates its unique scenario-ID tag.</li>
+          <li>The hook loads settings, starts/gets the shared report entry, and rejects an unsupported dynamic retry configuration.</li>
+          <li>Playwright starts; the configured browser engine/channel launches; the hook creates one isolated context and page for the scenario.</li>
+          <li>When trace policy is <code>retain-on-failure</code>, tracing starts before Gherkin steps and records action information, screenshots, and DOM snapshots without source collection.</li>
+          <li>Step definitions call page objects; page readiness combines DOMContentLoaded with a meaningful locator. Locator operations keep Playwright's auto-wait behavior.</li>
+          <li>On failure, the hook captures a screenshot and exports the trace before closing the context. Diagnostic failures are recorded as secondary errors; the scenario's original failure is preserved.</li>
+          <li>The hook closes context, browser, and Playwright resources. The report records outcome and evidence; the shared report is flushed once in Reqnroll's <code>AfterTestRun</code> lifecycle.</li>
+        </ol>
+        <p>Passing scenarios retain no trace file. Skipped and setup-failed scenarios are mapped to report status when Reqnroll/NUnit invokes the corresponding hooks.</p>
+      </section>
+
+      <section id="artifacts">
+        <h2>8. Reporting and Test Artifacts</h2>
+        <table>
+          <caption>Output paths and naming</caption>
+          <thead><tr><th scope="col">Artifact</th><th scope="col">Location</th><th scope="col">Behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Extent Spark report</td><td><code>TestResults/Reports/ExtentReport_&lt;timestamp&gt;_&lt;guid&gt;.html</code></td><td>One report per test process; includes scenario tags, IDs, browser/environment, attempt timing/status, failure stack, and screenshot link.</td></tr>
+            <tr><td>Failure screenshot</td><td><code>TestResults/artifacts/screenshots/&lt;run-id&gt;/TC001-&lt;title&gt;-&lt;guid&gt;-failure.png</code></td><td>Captured before context cleanup when failure screenshot configuration is enabled.</td></tr>
+            <tr><td>Failure trace</td><td><code>TestResults/artifacts/traces/&lt;run-id&gt;/TC001-&lt;title&gt;-&lt;guid&gt;-trace.zip</code></td><td>Exported on failure when trace mode is <code>retain-on-failure</code>; path is included in Extent.</td></tr>
+            <tr><td>NUnit test results</td><td>TRX file generated by the selected logger</td><td>Provides the final NUnit result; a report entry never changes the runner's outcome.</td></tr>
+          </tbody>
+        </table>
+        <p>Open the newest HTML report directly in a browser. Open a trace with the Playwright viewer:</p>
+        <pre><code>powershell.exe -ExecutionPolicy Bypass -File .\bin\Release\net10.0\playwright.ps1 show-trace TestResults/artifacts/traces/&lt;run-id&gt;/&lt;trace-file&gt;</code></pre>
+        <p>Artifacts can contain application data. Apply suitable access controls and retention policies when publishing them from CI. Reports and artifacts are ignored by Git.</p>
+        <p>There is no automatic retry attempt evidence because dynamic retries are unavailable. A failed scenario produces one failure screenshot/trace according to the normal diagnostics settings, not one per simulated retry.</p>
+      </section>
+
+      <section id="setup">
+        <h2>9. Prerequisites and Setup</h2>
+        <ul>
+          <li>.NET 10 SDK.</li>
+          <li>Google Chrome installed for the checked-in default <code>Browser:Channel = "chrome"</code>.</li>
+          <li>Access to the configured target application and valid credentials for login scenarios.</li>
+        </ul>
+        <p>From the repository root in PowerShell:</p>
+        <pre><code>dotnet restore
+dotnet build --configuration Release --no-restore
+# Configure credentials in this shell or a secure CI secret store.
+$env:TestCredentials__Username = "your-test-user"
+$env:TestCredentials__Password = "your-test-password"
+dotnet test --configuration Release --no-build --logger "trx"</code></pre>
+        <p>The full build/test sequence above was run successfully in this workspace. The current Chrome channel was available locally. If changing to Playwright-bundled Chromium, set <code>Browser:Channel</code> to <code>null</code> or remove it in <code>appsettings.json</code>, then install the supported browser after building:</p>
+        <pre><code>powershell.exe -ExecutionPolicy Bypass -File .\bin\Release\net10.0\playwright.ps1 install chromium</code></pre>
+        <p>For Firefox or WebKit, set <code>Browser:Engine</code>, clear <code>Browser:Channel</code>, and run the matching <code>install firefox</code> or <code>install webkit</code> command. Those engines are implemented but were not exercised in the latest verification. The process-scoped execution-policy option above was verified here; it does not change machine policy.</p>
+      </section>
+
+      <section id="running">
+        <h2>10. Running Tests</h2>
+        <table>
+          <caption>Verified test commands</caption>
+          <thead><tr><th scope="col">Purpose</th><th scope="col">Command</th></tr></thead>
+          <tbody>
+            <tr><td>All NUnit and Reqnroll tests</td><td><code>dotnet test --configuration Release --no-build --logger "trx"</code></td></tr>
+            <tr><td>One stable scenario ID</td><td><code>dotnet test --configuration Release --no-build --filter "TestCategory=TC001"</code></td></tr>
+            <tr><td>Smoke category</td><td><code>dotnet test --configuration Release --no-build --filter "TestCategory=smoke"</code></td></tr>
+            <tr><td>Headless execution</td><td><code>$env:Browser__Headless = "true"; dotnet test --configuration Release</code></td></tr>
+          </tbody>
+        </table>
+        <p>Run a build before using <code>--no-build</code>. NUnit result status is authoritative; Extent is a diagnostic/reporting view. The commands for retrying with <code>Retry.Enabled=true</code> are intentionally not provided because that mode fails setup instead of retrying.</p>
+      </section>
+
+      <section id="standards">
+        <h2>11. Coding Standards and Best Practices</h2>
+        <ul>
+          <li>Document reusable public APIs with XML comments; explain why in inline comments only where the reason is not obvious.</li>
+          <li>Use descriptive PascalCase APIs, camelCase locals, underscore-prefixed private fields, and <code>Async</code> suffixes for asynchronous methods.</li>
+          <li>Keep selectors and application operations inside page objects. Keep step definitions as readable orchestration.</li>
+          <li>Prefer role, label, and test-ID locators. The framework configures <code>data-test</code> as the Playwright test-ID attribute.</li>
+          <li>Prefer Playwright's built-in auto-waiting. Do not use fixed sleeps or network-idle as a general readiness rule.</li>
+          <li>Keep credentials out of source, reports, and logs. Use environment variables or the ignored local file.</li>
+          <li>Each scenario owns its browser context. Do not enable parallel execution without verifying test-account and runner lifecycle isolation.</li>
+          <li>Do not edit generated Reqnroll C#; change the feature and let the normal build regenerate it.</li>
+        </ul>
+        <h3>Adding a scenario</h3>
+        <ol>
+          <li>Choose an unused stable <code>TC###</code> ID and add exactly one matching tag and the same prefix to the scenario title.</li>
+          <li>Add readable business steps to the feature.</li>
+          <li>Implement missing bindings in <code>StepDefinitions</code> and delegate browser behavior to the relevant page object.</li>
+          <li>Build and filter by <code>TestCategory=TC###</code>; verify report and artifact IDs.</li>
+        </ol>
+      </section>
+
+      <section id="troubleshooting">
+        <h2>12. Troubleshooting</h2>
+        <table>
+          <caption>Common symptoms and checks</caption>
+          <thead><tr><th scope="col">Symptom</th><th scope="col">Check</th></tr></thead>
+          <tbody>
+            <tr><td>Browser launch fails</td><td>The default uses installed Chrome through the Chromium <code>chrome</code> channel. Confirm Chrome is installed, or clear the channel and install bundled Chromium using the generated Playwright script.</td></tr>
+            <tr><td>Configuration validation fails</td><td>Check that <code>BaseUrl</code> is absolute HTTP/HTTPS, browser engine is chromium/firefox/webkit, channel is only set for Chromium, and timeout values are positive.</td></tr>
+            <tr><td>Login credentials are missing</td><td>Set both <code>TestCredentials__Username</code> and <code>TestCredentials__Password</code>; check spelling and shell scope. Never paste secrets into logs or commit them.</td></tr>
+            <tr><td>Scenario ID setup failure</td><td>Ensure every scenario has exactly one <code>@TC###</code> tag. Keep the title prefix synchronized.</td></tr>
+            <tr><td>Locator timeout</td><td>Check the page state, selector, configured action/assertion timeout, and the failure screenshot/trace. Keep selectors page-specific and stable.</td></tr>
+            <tr><td>Report missing</td><td>Confirm scenario hooks ran, the reporting output directory is writable, and inspect test output for an Extent warning. Check <code>Reporting:OutputDirectory</code>.</td></tr>
+            <tr><td>Screenshot or trace missing</td><td>Screenshots require a failed scenario, an available page, and <code>CaptureScreenshotOnFailure=true</code>. Traces require <code>TraceMode=retain-on-failure</code> and a created context.</td></tr>
+            <tr><td>Retry setup error</td><td>Expected for <code>Retry.Enabled=true</code> with <code>MaxRetries &gt; 0</code> in the current runner. Turn it off or use zero; do not interpret this as an actual retry.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="limitations">
+        <h2>13. Limitations and Future Improvements</h2>
+        <h3>Implemented</h3>
+        <ul>
+          <li>Stable scenario IDs in Gherkin tags/title, NUnit category filtering, report names, and failure artifact filenames.</li>
+          <li>Extent Spark reporting, failure screenshots, configurable retain-on-failure tracing, and unique artifact names.</li>
+          <li>Typed settings and scenario-scoped browser/context/page lifecycle.</li>
+          <li>Reusable path/metadata utilities and timeout-backed Playwright waits.</li>
+        </ul>
+        <h3>Not implemented</h3>
+        <ul>
+          <li>Dynamic NUnit retries from configuration, flaky-pass handling, and per-retry evidence. Current NUnit/Reqnroll integration fails closed when retries are requested.</li>
+          <li>Scenario Outline examples with unique per-example IDs. The current convention requires one ID tag per generated scenario, and no outlines are present.</li>
+          <li>Parallel scenario execution. It remains disabled.</li>
+          <li>Firefox/WebKit runtime verification and a provider-specific CI workflow.</li>
+        </ul>
+      </section>
+
+      <section id="policy">
+        <h2>14. License or Internal Use</h2>
+        <p>No repository-level license or internal-use policy was present in the inspected project files. Do not infer a project license from the third-party dependency licenses; obtain the repository owner's policy before redistribution.</p>
+      </section>
+    </main>
+  </div>
+  <footer><p>Playwright BDD Framework · Documentation derived from the current project configuration and implementation.</p></footer>
+</body>
+</html>
